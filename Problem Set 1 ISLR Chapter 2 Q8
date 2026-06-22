@@ -1,0 +1,26 @@
+college<-read.csv("College.csv")
+View(college)
+#the following command created a column known as rownames- has renamed each row to the university name so now R won't perform calculations on this column
+rownames(college)<- college[,1]
+View(college)
+#the following command is to delete the original list of college names column since it is currently duplicated 
+college <- college[,-1]
+View(college)
+summary(college)
+#creating a scatterplot to show the first ten columns of the data 
+library(dplyr)
+college<- college%>%mutate(Private=case_match(Private, "Yes"~"1","No"~"0", .default=Private))
+college$Private<-as.numeric(college$Private)
+pairs(college[,1:10])
+plot(college$Outstate,college$Private, xlab="Out of State", ylab= "Private", col = "#FF46A2")
+#creating a new qualitative variable called Elite. will divide universities into two groups based on whether or not the proporation of students coming from the top ten percent og their high school class exceeds 50%
+Elite<- rep("No",nrow(college))
+#the above command created a new column outside of the exisiting dataframe which was called elite and the rep()function made it so it repeated the "no" for n number of rows in the original dataset
+college$Elite <- Elite
+#this command has added the new Elite column we created to now be housed in the original file we were working with 
+#now I will change the values in Elite for college with proportion of students attending who were in top ten percent 
+#exceeds 50% to "yes"
+college$Elite[college$Top10perc>50] <- "Yes"
+college$Elite<- as.factor(college$Elite)
+summary(college$Elite)
+plot(college$Outstate,college$Elite, xlab="Out of State", ylab= "Elite", col = "#FF46A2")
