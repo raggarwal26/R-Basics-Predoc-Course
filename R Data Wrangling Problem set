@@ -1,0 +1,58 @@
+#R for Predocs Data wrangling problem set 
+library(tidyverse)
+college_grad_data<- read.csv("https://raw.githubusercontent.com/BUSN32100/data_files/master/recent-grads.csv")
+college_grad_data
+colnames(college_grad_data)
+glimpse(college_grad_data)
+college_grad_data %>% 
+  arrange(unemployment_rate) %>% 
+  select(rank, major, unemployment_rate) %>% 
+  mutate(unemployment_rate= round(unemployment_rate, 1))
+college_grad_data %>% 
+  arrange(desc(sharewomen)) %>% 
+  select(major, total, sharewomen) %>% 
+  head(3)
+ggplot(data= college_grad_data, mapping=aes(x=median))+
+  geom_histogram(binwidth=5000, fill="lightblue", color="black")
+#I chose the binwidth of 5000 to be able to clearly display all of the datapoints onto the graph, while still allowing the axies to be readible
+college_grad_data %>% 
+  summarize(min=min(median), max=max(median),
+            mean= mean(median), med= median(median),
+            sd=sd(median), q1=quantile(median, probs= 0.25), 
+            q3=quantile(median, probs=0.75))
+#based on the data, the median income of recent college grads using the fivethirtyeight dataset is $36,000. 
+#the data is skewed to the right, with the first quartile is at 33,000 indicating that 25% of the data is below 33,000
+#However, despite the fact that the maximum recorded median income was 110000, the third quartile is at $45,000
+#Due to the high maximum value of 110000, we see a mean and standard deviation that does not appear to accurately represent the data 
+#the mean of median incomes is 40,151.45 and the standard deviation 11,470.18
+#the mean is sensitive to extreme values, and due to the large variance in median incomes attributed to outliers, we see an inflated standard deviaiton
+ggplot(data=college_grad_data, mapping=aes(x=median))+
+  geom_histogram(binwidth=5000, color="black",fill="hotpink")+
+  facet_wrap(~major_category)
+college_grad_data %>% 
+  filter(median ==max(median)) %>% 
+  select(major, major_category, median)
+#petrolium engineering has the highest median income 
+college_grad_data %>% 
+  filter(median==min(median)) %>% 
+  select(major, major_category, median)
+#library science has the lowest median income
+college_grad_data %>% 
+  filter(median==median(median)) %>% 
+  select(major,median)
+#6 majors all have the median median income
+#human resources and personnel management, pre-law and legal studies, miscellaneous health and medical professions, public administration, geosciences, social psychology
+college_grad_data %>% 
+  count(major_category) %>% 
+  arrange(desc(n))
+#the most popular major cateogry is engineering with 29 students pursuing it
+stem_categories<-c("Biology & Life Science", "Computers & Mathematics", "Engineering","Physical Sciences")
+college_grad_data<- college_grad_data %>% 
+  mutate(major_type = ifelse(major_category %in% stem_categories, "stem","not stem"))
+ggplot(data=college_grad_data, mapping=aes(x=median, y=sharewomen, color=major_type))+geom_point()
+#as median income increases, it appears as though the share of women in the major decreases. Additionally, a higher share of women are present in non-stem fields 
+college_grad_data %>% 
+  filter(major_type== "stem", median<36000) %>% 
+  select(major, median, p25th,p75th) %>% 
+  arrange(median)
+#Zoology is the stem major with the lowest median income of 26000
