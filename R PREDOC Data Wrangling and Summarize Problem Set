@@ -1,0 +1,86 @@
+#r predoc prep course data wrangling/summarize practice problem
+library(tidyverse)
+rio<-read.csv("https://raw.githubusercontent.com/BUSN32100/data_files/master/rio.csv")
+View(rio)
+anyNA(rio)
+rio %>% 
+  summarize(across(everything(), ~sum(is.na(.x))))
+(rio_new <- rio %>%
+    mutate(across(everything(),~replace(.x, is.na(.x), 0)))) %>%
+    select_if(~!anyNA(.x)) %>%
+    names()%>%
+  identical(., names(rio))
+print(colnames(rio_new))
+View(rio_new)
+rio %>% 
+  count(nationality) %>% 
+  arrange(desc(n))
+#the USA brought the most athletes with 567
+#the top five countries with the most athletes were 
+#Brazil (485)
+#Germany(441)
+#Australia (431)
+#France(410)
+rio %>% 
+  filter(sex=="female") %>% 
+  count(nationality) %>% 
+  arrange(desc(n))
+#the USA had the most female athletes 
+#the following top 4 countries with the highest female participation were 
+#China (251)
+#Aus(220)
+#Brazil(216)
+#Germany(204)
+rio %>% 
+  filter(sex=="male") %>% 
+  count(nationality) %>% 
+  arrange(desc(n))
+#brazil had the most male athletes at 269
+#following brazil was the USA at 264
+#then Germany (237), France (234), and Australia(211)
+print(colnames(rio_new))
+rio %>% 
+  summarize(gold = sum(gold),
+          silver = sum(silver),
+          bronze = sum (bronze))
+#there were 666 gold medals, 655 silver, 704 bronze
+rio_new<- rio_new %>% 
+  mutate(total= gold + silver + bronze)
+rio_new %>% 
+  select(name,total) %>% 
+  arrange(desc(total))
+#top 9 athletes in the rio olympics 
+#michael phelps (6), Katie Ledecky (5), Simone Biles (5)
+#Emma McKeon (4), Katinka Hosszu (4),  Madeline Dirado (4), 
+#Nathan Adrian(4),Penny Oleksia (4), Simone Manuel(4)
+rio_new<- rio_new %>% 
+  mutate(age= 2016-year_of_birth)
+rio_new %>% 
+  group_by(sport) %>% 
+  summarize(min_age= min(age),
+            max_age= max(age)) %>% 
+  arrange(min_age)
+sports_count<- rio_new %>% 
+ count(sport) %>% 
+  arrange(sport)
+sports<- sports_count
+View(sports)
+rio_2<-rio %>% 
+  group_by(sport) %>% 
+  mutate(n_gold = sum(gold, na.rm =TRUE))
+View(rio_2)
+rio_2<- rio_2 %>% 
+  select(sport,n_gold) %>% 
+  distinct() %>% 
+  arrange(n_gold)
+View(rio_2)
+sports_final<-sports %>% 
+  left_join(rio_2, by="sport")
+View(sports_final)
+sports_final<- sports_final %>% 
+  mutate(gold_ratio= n_gold/n)
+View(sports_final)
+sports_final %>% 
+  arrange(desc(gold_ratio))
+#gymnastics has the highest ratio of gold medals to participants at 0.0926
+#golf had the lowest gold to participants ratio of 0.0167
