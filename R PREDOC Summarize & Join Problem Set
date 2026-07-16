@@ -1,0 +1,50 @@
+#This document is my code for the Summarize and Join Practice Problems
+if (!require("nycflights13")) install.packages("nycflights13", repos = "http://cran.us.r-project.org")
+library(nycflights13)
+library(tidyverse)
+data(package= "nycflights13")
+#for this assignement, I will be looking at data from the flights, weather, planes, airports, and airlines data tables 
+glimpse(flights)
+#flights provides details on departure and arrival 
+#includes times, locations, and flight specifications
+glimpse(weather)
+#weather provides details on the date and numerical data on the type of weather 
+#weather also includes the location for the documented weather 
+glimpse(planes)
+#this dataset provides general information about the make and type of the plane 
+glimpse(airports)
+#airports provides the name, and location details for airports 
+glimpse(airlines)
+#the airlines dataset provides information on the name and abbriviation of the airline carriers 
+View(flights)
+View(airports)
+View(airlines)
+flights_2<- flights %>% 
+  left_join(y=airlines, by="carrier")
+View(flights_2)
+flights_2 %>% 
+  select(origin, name)%>% 
+  count(name) %>% 
+  arrange(desc(n))
+#the airline with the most departing flights from NYC was United Air Lines Inc with 58665 flights 
+#the second most was JetBlue Airways (54635 flights)
+#then Express Jet Airlines inc (54173), Delta Air Lines inc (48110)
+flights_2 %>% 
+  filter(!is.na(dep_delay)) %>% 
+  group_by(name) %>% 
+  summarize(mean_delay= mean(dep_delay)) %>% 
+  arrange(desc(mean_delay))
+#Frontier Airlines Inc has the highest mean delay of 20.2 
+#US Airways Inc has the lowest mean delay of 3.78
+flights_2 %>% 
+  select(name, flight, air_time) %>% 
+ filter(air_time== max(air_time, na.rm = TRUE))
+#United Air Lines INC flight 15 had the longest airtime of 695
+flights_3<-flights_2 %>% 
+  left_join(y=planes, by="tailnum")
+View(flights_3)
+colnames(flights_3)
+flights_3 %>% 
+  select(name, flight,air_time, dest, seats) %>% 
+  filter(air_time== max(air_time, na.rm= TRUE))
+#United Airlines flight number 15 had the longest airtime of 695, flying to Honolulu International Airport with 292 seats
