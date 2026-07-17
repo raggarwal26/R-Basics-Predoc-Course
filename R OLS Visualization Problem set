@@ -1,0 +1,70 @@
+#R Predoc.org course: OLS data visualization problem set 
+library(tidyverse)
+burrito<- read_csv('https://raw.githubusercontent.com/BUSN32100/data_files/master/burrito.csv')
+glimpse(burrito)
+burrito_1<- burrito %>% 
+ rowwise() %>% 
+  mutate(core_avg= mean(c(Tortilla, Temp, Meat, Fillings, MeatToFilling,
+                          Uniformity, Salsa, Wrap))) %>% 
+  ungroup()
+#the command above was used to figure out the average scores of the core dimensions of a burrito 
+#key note: we are intentionally exlcuding cost
+#we use the ungroup feature to undo the rowwise: rowwise groups the dataframe 1 row at a time, which allows us to find the core dimensions for each row 
+#however when building our model, we don't want a unique model for each row, so then we have to ungroup
+View(burrito_1)
+ggplot(data=burrito_1, mapping=aes(x=overall))+geom_histogram(binwidth = 0.5, color="black", fill="pink")
+#the data is slightly skewed to the left. A majority of individuals rated the burritos quite highly
+burrito_1 %>% 
+  summarize(mean= mean(overall),
+            max= max(overall),
+            min= min(overall),
+            median= median(overall))
+#generally, I expected the ratings to be centered near 3 since that is the middle ranking option 
+#the mean is around 3.57, and median is 3.72, so we see that the mean is pulled slightly down due to some low ratings
+#however, generally, the data is centered around an overall rating of 4
+ggplot(data=burrito_1, mapping = aes(x=core_avg, y=overall))+
+  geom_point()+geom_smooth(method='lm', se=F)
+#based on the scatterplot of the data, core_avg and overall rankings have a positive relationship 
+?geom_jitter()
+#adds a small amount of random variation to the location of each point
+#helps handle overplotting caused by discreteness in smaller datasets 
+ggplot(data=burrito_1, mapping=aes(x=core_avg, y=overall))+geom_jitter()+
+  geom_smooth(method='lm', se=F)
+#geom_jitter allows for a clearer image of the total number of datapoints 
+#in the original scatterplot, if datapoints exactly overlap we cannot tell if there are mutliple or just one 
+#geom jitter allows us to clearly see each individual datapoint 
+m_core<-lm(overall~core_avg, burrito_1)
+coef((m_core))
+#based on the regression, the equation would be as follows 
+#y= -0.1441654 + 1.0417546X
+  #simplfied: y= -0.14 +1.04X; where y = overall, and x = core_avg
+ggplot(data=burrito_1, mapping=aes(x=core_avg, y=overall))+geom_point()+
+  geom_abline(intercept= coef(m_core)[1],
+              slope= coef(m_core)[2],
+              color="orange",
+              size=1)
+#the coefficient for core average (1.04) indicates that for every 1 unit increase in the core average rating, the overall score will increase by 1.04. 
+#the intercept of -0.144 means that if the core average rating was zero, the overall rating would be -0.144. 
+  ##in this case, the intercept isn't a very helpful datapoint since ratings can't fall below zero.
+m_rec<- lm(overall~Rec, burrito_1)
+coef(m_rec) 
+glimpse(burrito_1$Rec)
+#in this case, Rec is a categorical variable with the options of Yes and No
+#in this case, No is the  base/reference option 
+#the linear model is: y= 2.8708 +1.028X 
+#what this means is that the overall rating for "No" recommendations is 2.8708
+#the overall rating for "Yes" is 1.028 higher than the rating for "No"
+#No recommendation = Y= 2.8708
+#Yes recommendation = Y= 2.8708 +1.028X 
+burrito_2<- burrito_1 %>% 
+  mutate(CaliBurrito= if_else(grepl('california', Burrito),'YES','NO'))
+View(burrito_2)         
+m_cali<- lm(overall~CaliBurrito*core_avg, burrito_2)
+coef(m_cali)
+#the linear model is as follows 
+#y=0.064 -0.36B1 +0.97B2 +0.13B3
+#Y=overall, B1=CaliBurrito(Yes), B2= Core average, B3=Core Average of Yes Cali Burritos 
+#coefficient of B1, when core average is zero, if the burrito has the word california in its name, its overall rating is predicted to fall by 0.36 units.  
+#coefficient of B2 for every 1 unit increase in the core average rating, the overall rating increases by 0.97
+#coefficient of B3, for every one unit increase in the core average, burritos with the word california in their names will see and increase of 0.13 points more than burritos without california in their names 
+#if all of the explanatory variables are zero, the overall rating of the burrito would be 0.064 (intercept). Since none of the ratings for the categories that make up the core average are zero or below zero, for this dataset, the intercept is not a useful datapoint
